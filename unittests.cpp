@@ -30,5 +30,26 @@ void UnitTests::testCityValidation()
 
 void UnitTests::testCityNormalInput()
 {
+    MainWindow testWindow = MainWindow();
+
+     // Проверка загрузки данных
+     bool ok;
+     testWindow.loadCitiesData(&ok);
+     QVERIFY(ok);
+     QVERIFY(testWindow.cities.size() > 1000);
+
+     // Город начинается не на последнюю букву предыдущего
+     QString city = "курск";
+     QVERIFY(!HelperLib::isStrBeginWith("абакан", city.back()));
+     QVERIFY(HelperLib::isStrBeginWith("казань", city.back()));
+
+     // Город не существует
+     QVERIFY(!testWindow.cities.contains("пкпва"));
+     QVERIFY(testWindow.cities.contains("азов"));
+
+     // Город уже называли
+     testWindow.cities["Москва"] = true;
+     QVERIFY(testWindow.isCityWasNamed("Москва"));
+     QVERIFY(!testWindow.isCityWasNamed("Новосибирск"));
 
 }
