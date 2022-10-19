@@ -32,6 +32,32 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::loadCitiesData(bool* isSuccesful)
+{
+    QFile file(":/cities.txt"); // Загрузка из qt resource system
+    if (file.size() > MAX_CITIES_FILE_SIZE)
+    {
+        ui->statusBar->showMessage(tr("Размер файла с названиями городов слишком велик"));
+        *isSuccesful = false;
+        return;
+    }
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        ui->statusBar->showMessage(tr("Не удалось загрузить файл с названиями городов"));
+        *isSuccesful = false;
+        return;
+    }
+
+    QTextStream in(&file);
+    while (!in.atEnd())
+    {
+        QString city = in.readLine();
+        cities[city] = false;
+    }
+
+    *isSuccesful = true;
+}
+
 bool MainWindow::isCityWasNamed(const QString& city)
 {
     return cities.value(city);
@@ -51,9 +77,41 @@ void MainWindow::startGame()
     ui->stackedWidget->setCurrentIndex(0);
 }
 
+
 void MainWindow::submitAnswer()
 {
+    const QString city = ui->le_city->text().toLower();
 
+    // Проверки ответа
+    if (!HelperLib::isCityValid(city))
+    {
+        ui->statusBar->showMessage(tr("Название города содержит ошибки"), STATUS_BAR_MSG_TIMEOUT);
+        return;
+    }
+
+    if (lastCh != QChar(0) && !HelperLib::isStrBeginWith(city, lastCh))
+    {
+        ui->statusBar->showMessage(tr("Город начинается не на последнюю букву предыдущего города"), STATUS_BAR_MSG_TIMEOUT);
+        return;
+    }
+
+    if (!cities.contains(city))
+    {
+        ui->statusBar->showMessage(tr("Город не существует"), STATUS_BAR_MSG_TIMEOUT);
+        return;
+    }
+
+    if (isCityWasNamed(city))
+    {
+        ui->statusBar->showMessage(tr("Город уже называли"), STATUS_BAR_MSG_TIMEOUT);
+        return;
+    }
+
+    ui->l_lastCity->setText(city);
+    lastCh = city.back();
+    cities[city] = true;
+    ui->statusBar->showMessage("");
+    transferTurn();
 }
 
 void MainWindow::transferTurn()
